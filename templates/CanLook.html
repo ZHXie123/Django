@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts@latest/dist/echarts.min.js"></script>
+		<style>
+			/* 全局样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+/* 导航栏样式 */
+.navbar {
+    background-color: #333;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    
+   
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 0 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.navbar a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #555;
+    border-radius: 10px;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: -1;
+}
+
+.navbar a:hover::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.navbar a:hover {
+    color: #fff;
+    background-color: transparent;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* 动画效果 */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.navbar a {
+    animation: slideIn 0.5s ease forwards;
+}
+
+/* 容器样式，使用 Flexbox 实现垂直布局 */
+.container-wrapper {
+    display: flex;
+    flex-direction: column; /* 垂直布局 */
+    align-items: center; /* 如有需要，可以设置水平居中 */
+}
+
+/* 子容器样式，使 #container 和 #container2 并排显示 */
+.container-row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between; /* 根据需要调整空间分配 */
+}
+
+#container {
+    width: calc(60% - 10px); /* 减去 margin 宽度，防止容器之间重叠 */
+    height: 600px;
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+#container2 {
+    width: calc(40% - 10px); /* 减去 margin 宽度，防止容器之间重叠 */
+    height: 600px;
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+/* 新增 #container3 样式 */
+#container3 {
+    width: 1000px; /* 根据页面布局调整 */
+    height: 600px; /* 根据需要调整高度 */
+    margin: 10px;
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+/* 新增 #container4 样式 */
+#container4 {
+    width: 1000px; /* 根据页面布局调整宽度 */
+    height: 600px; /* 根据需要调整高度 */
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+/* 更新 .container-row 样式以适应两列布局 */
+.container-row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between; /* 调整为 space-between 以在容器之间留出空间 */
+    margin-bottom: 10px; /* 容器行之间的间距 */
+}
+
+
+		</style>
+	</head>
+	<body>
+		
+		<nav class="navbar">
+			<div>
+				<a href="{% url 'base:index' %}" class="active">首页 <span class="sr-only">(current)</span></a>
+			</div>
+		</nav>
+
+		<div class="container-wrapper">
+			<div class="container-row">
+				<div id="container"></div>
+				<div id="container2"></div>
+			</div>
+			<div class="container-row">
+                <div id="container3"></div> <!-- 垂直放置在下方 -->
+                <div id="container4"></div> <!-- 新增的容器 -->
+            </div>
+		</div>
+
+		
+		<!-- 柱状图 -->
+		<script>
+			var echart = echarts.init(document.getElementById("container"));
+		
+			// 发起 fetch 请求获取数据
+			fetch("http://127.0.0.1:8080/canlook/get/")
+				.then(response => {
+					// 检查响应状态
+					if (!response.ok) {
+						throw new Error('Network response was not ok');
+					}
+					return response.json();
+				})
+				.then(data => {
+					// 假设服务器返回的数据格式是 {"data": [87, 78, 78]}
+					// 我们需要从这个对象中获取 data 属性
+					console.log(data)
+					var seriesData = data.data;
+					var courseName = data.courseName
+					var courseCount = data.courseCount
+		
+					// 设置 ECharts 的 option
+					var option = {
+						title: {
+							text: "选课人数图"
+						},
+						legend: {
+							data: ["人数"]
+						},
+						tooltip: {
+							trigger: "axis"
+						},
+						yAxis: {
+							data: courseName
+						},
+						xAxis: {},
+						series: [{
+							name: "人数",
+							type: "bar",
+							data: seriesData, // 使用从服务器获取的数据
+							stack: true,
+							label: {
+								show: true,
+								position: "insideRight",
+								formatter: "{a}\n{c}人"
+							}
+						}]
+					}
+					// 使用刚指定的配置项和数据显示图表
+					echart.setOption(option);
+				})
+				.catch(error => {
+					console.error('There was a problem with the fetch operation:', error);
+				});
+		</script>
+<!-- 饼图 -->
+<script>
+    var chart = echarts.init(document.getElementById('container2'));
+
+    fetch("http://127.0.0.1:8080/canlook/get")
+        .then(response => {
+            // 检查响应状态
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 确保data对象中有pieData属性
+            if (data && data.pieData) {
+                var PieData = data.pieData;
+
+                var option = {
+                    title: {
+                        text: '饼图',   // 图表标题
+                        x: 'center'   // 标题位置
+                    },
+                    series: [{
+                        type: 'pie',   // 图表类型为饼图
+                        radius: '60%',   // 饼图半径
+                        data: PieData,
+                        label: {
+                            normal: {
+                                formatter: '{b}: {c} ({d}%)' // 转义花括号
+                            }
+                        }
+                    }]
+                }
+
+                chart.setOption(option);
+            } else {
+                console.error('No pieData found in the response');
+            }
+        })
+        .catch(error => {
+            console.error('Fetching error:', error);
+        });
+</script>
+
+
+<!-- 热力图脚本 -->
+<script>
+    var heatmapChart = echarts.init(document.getElementById('container3'));
+
+    fetch("http://127.0.0.1:8080/canlook/get") 
+        .then(response => {
+            // 检查响应状态
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+        
+        
+            var Xdata = data.XData;
+            var Ydata = data.YData;
+            var ResultMap = data.resultMap;
+
+            // console.log(Xdata);
+            // console.log(Ydata)
+
+            var option = {
+                // 添加图表标题
+                title: {
+                    text: '课程选课热度图', // 热力图标题
+                    left: 'center' // 标题位置居中
+                },
+
+                xAxis: {
+                    type: 'category',
+                    data: Xdata
+                },
+                yAxis: {
+                    type: 'category',
+                    data: Ydata
+                },
+                visualMap: {
+                    max: 3,
+                    calculable: true,
+                    inRange: {
+                        color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
+                    }
+                },
+                series: [{
+                    name: '热度',
+                    type: 'heatmap',
+                    data: ResultMap,
+                    label: {
+                        show: true,
+                        color: '#000'
+                    }
+                }]
+            };
+
+            heatmapChart.setOption(option);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+</script>
+
+<!-- 折线图 -->
+<script>
+    // 基于准备好的 DOM，初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('container4'));
+
+    // 发起 fetch 请求获取数据
+    fetch("http://127.0.0.1:8080/canlook/get") // 修正了 URL
+        .then(response => {
+            // 检查响应状态
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 确保返回的数据中包含所需的属性
+            if (data && data.courseChineseName && data.courseSelectTime) {
+                var Xdata = data.courseChineseName;
+                var Ydata = data.courseSelectTime;
+
+                var option = {
+                    title: {
+                        text: '课程选课情况' // 柱状图标题
+                    },
+                    tooltip: {}, // 工具框
+                    legend: {
+                        data: ['选课人数'] // 图例
+                    },
+                    xAxis: {
+                        name: "课程", // x轴标题
+                        type: 'category', // 类目轴
+                        data: Xdata // x轴每一行的内容
+                    },
+                    yAxis: {
+                        name: "选课人数" // y轴标题
+                    },
+                    series: [ { // 数据内容
+                        name: '选课人数', // 数据名称
+                        type: 'line', // 数据形式，这里使用柱状图
+                        data: Ydata, // 数据
+                        itemStyle: {
+                            normal: {
+                                label: {
+                                    show: true,
+                                    position: 'top' // 将标签显示在柱子的顶部
+                                }
+                            }
+                        }
+                    }]
+                };
+
+                // 使用刚指定的配置项和数据显示图表。
+                myChart.setOption(option);
+            } else {
+                console.error('返回的数据格式不正确');
+            }
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+</script>
+    
+
+	</body>
+</html>
+
